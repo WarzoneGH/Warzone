@@ -6489,9 +6489,9 @@
 
 
             startOverlay.style.display =
-                (isMouseLocked || playerDead || paused)
-                    ? 'none'
-                    : 'flex';
+                (!gameStarted && !isMouseLocked && !playerDead && !paused)
+                    ? 'flex'
+                    : 'none';
 
 
 
@@ -9140,7 +9140,7 @@
             ? activeViewmodel.localToWorld(localMuzzle.clone())
             : camera.position.clone();
 
-        const endPoint = muzzleWorld.clone().add(
+        const endPoint = camera.position.clone().add(
             shootDirection.clone().multiplyScalar(100)
         );
 
