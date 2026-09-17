@@ -1269,28 +1269,30 @@
 
 
 
-    // Global online presence: sends a short-lived heartbeat and reads the
-    // number of unique active game sessions worldwide.
+    // Global online presence: records a short-lived unique session event and
+    // reads the number of unique active game sessions worldwide.
     const globalOnlineCountEl = document.getElementById('global-online-count');
     const globalOnlineSessionId = (window.crypto && crypto.randomUUID)
         ? crypto.randomUUID()
         : ('session-' + Date.now() + '-' + Math.random().toString(36).slice(2));
     const GLOBAL_ONLINE_NS = 'macope1212.github.io';
-    const GLOBAL_ONLINE_HEARTBEAT_MS = 60 * 1000;
-    const GLOBAL_ONLINE_WINDOW = '5m';
+    const GLOBAL_ONLINE_ACTION = 'online';
+    const GLOBAL_ONLINE_HEARTBEAT_MS = 30 * 1000;
+    const GLOBAL_ONLINE_WINDOW = '2m';
 
     async function updateGlobalOnlineCount() {
         try {
             const userId = encodeURIComponent(globalOnlineSessionId);
             await fetch(
                 'https://counterapi.com/api/' + GLOBAL_ONLINE_NS +
-                '/online/heartbeat?userId=' + userId,
+                '/' + GLOBAL_ONLINE_ACTION + '/' + userId +
+                '?userId=' + userId + '&trackOnly=true',
                 { cache: 'no-store', keepalive: true }
             );
 
             const response = await fetch(
                 'https://counterapi.com/api/' + GLOBAL_ONLINE_NS +
-                '/any/any?timeline=' + GLOBAL_ONLINE_WINDOW +
+                '/' + GLOBAL_ONLINE_ACTION + '/any?timeline=' + GLOBAL_ONLINE_WINDOW +
                 '&unique=true&readOnly=true',
                 { cache: 'no-store' }
             );
@@ -1309,12 +1311,6 @@
 
     window.addEventListener('pagehide', () => {
         clearInterval(globalOnlineTimer);
-        const userId = encodeURIComponent(globalOnlineSessionId);
-        fetch(
-            'https://counterapi.com/api/' + GLOBAL_ONLINE_NS +
-            '/online/heartbeat?userId=' + userId,
-            { cache: 'no-store', keepalive: true }
-        ).catch(() => {});
     });
 
     const scene = new THREE.Scene();
@@ -3486,7 +3482,6 @@
     function createSMG(){const g=new THREE.Group();const b=new THREE.Mesh(new THREE.BoxGeometry(.68,.16,.16),matGun);b.position.set(.1,.28,0);g.add(b);const br=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.22,8),matGunLight);br.rotation.z=Math.PI/2;br.position.set(.53,.28,0);g.add(br);const st=new THREE.Mesh(new THREE.BoxGeometry(.28,.12,.14),matGunAccent);st.position.set(-.35,.3,0);g.add(st);const gr=new THREE.Mesh(new THREE.BoxGeometry(.14,.3,.15),matGunGrip);gr.position.set(-.03,.02,0);gr.rotation.z=-.3;g.add(gr);g.rotation.z=-Math.PI/2;return g;}
     function createSniper(){const g=new THREE.Group();const b=new THREE.Mesh(new THREE.BoxGeometry(1.05,.15,.15),matGun);b.position.set(.05,.32,0);g.add(b);const br=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.85,8),matGunLight);br.rotation.z=Math.PI/2;br.position.set(.82,.35,0);g.add(br);const sc=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.34,10),matGunAccent);sc.rotation.z=Math.PI/2;sc.position.set(.18,.48,0);g.add(sc);const st=new THREE.Mesh(new THREE.BoxGeometry(.5,.2,.15),matGunWood);st.position.set(-.58,.25,0);g.add(st);g.rotation.z=-Math.PI/2;return g;}
 
-    function createGrenade(){const g=new THREE.Group();const body=new THREE.Mesh(new THREE.SphereGeometry(.16,12,12),matGun);body.position.y=.2;g.add(body);const pin=new THREE.Mesh(new THREE.TorusGeometry(.045,.012,6,10),matGunLight);pin.position.set(.08,.35,0);g.add(pin);return g;}
 
     function createBandage() {
 
@@ -3610,7 +3605,7 @@
 
 
     function spawnChestLoot(chest, forcedType = null) {
-        const types = ['Pistol', 'AR', 'Shotgun', 'SMG', 'Sniper', 'Grenade', 'Bandage'];
+        const types = ['Pistol', 'AR', 'Shotgun', 'SMG', 'Sniper', 'Bandage'];
         const type = forcedType || types[Math.floor(Math.random() * types.length)];
         chest.userData.lootType = type;
         let item;
@@ -3620,7 +3615,6 @@
         else if (type === 'Shotgun') item = createShotgun();
         else if (type === 'SMG') item = createSMG();
         else if (type === 'Sniper') item = createSniper();
-        else if (type === 'Grenade') item = createGrenade();
         else item = createBandage();
         const angle = Math.random() * Math.PI * 2;
         const distance = 1.2 + Math.random() * 1.2;
@@ -5365,7 +5359,7 @@
 
 
 
-            } else if (weaponType === 'SMG') { p.rig.currentWeaponMesh=createSMG(); p.rig.currentWeaponMesh.scale.set(.8,.8,.8); p.rig.weaponSlot.add(p.rig.currentWeaponMesh); } else if (weaponType === 'Sniper') { p.rig.currentWeaponMesh=createSniper(); p.rig.currentWeaponMesh.scale.set(.8,.8,.8); p.rig.weaponSlot.add(p.rig.currentWeaponMesh); } else if (weaponType === 'Grenade') { p.rig.currentWeaponMesh=createGrenade(); p.rig.currentWeaponMesh.scale.set(.9,.9,.9); p.rig.weaponSlot.add(p.rig.currentWeaponMesh); } else if (weaponType === 'Bandage') {
+            } else if (weaponType === 'SMG') { p.rig.currentWeaponMesh=createSMG(); p.rig.currentWeaponMesh.scale.set(.8,.8,.8); p.rig.weaponSlot.add(p.rig.currentWeaponMesh); } else if (weaponType === 'Sniper') { p.rig.currentWeaponMesh=createSniper(); p.rig.currentWeaponMesh.scale.set(.8,.8,.8); p.rig.weaponSlot.add(p.rig.currentWeaponMesh); } else if (weaponType === 'Bandage') {
 
 
 
@@ -5573,12 +5567,6 @@
 
 
 
-
-                case 'grenade':{
-                    if(this.isHost)this._broadcast(data,fromId);
-                    setTimeout(()=>explodeGrenade(new THREE.Vector3(data.ox,data.oy,data.oz),data.fromId),900);
-                    break;
-                }
 
                 case 'killFeed':{addKillFeed(data.killerId===this.myId?'YOU':shortPlayerId(data.killerId),data.victimId===this.myId?'YOU':shortPlayerId(data.victimId));break;} case 'shoot':{
 
@@ -5796,12 +5784,6 @@
 
 
 
-        sendGrenade(origin,dir){
-            if(!this.enabled)return;
-            const msg={type:'grenade',ox:origin.x,oy:origin.y,oz:origin.z,dx:dir.x,dy:dir.y,dz:dir.z,fromId:this.myId};
-            if(this.isHost){this._broadcast(msg,null);setTimeout(()=>explodeGrenade(origin,this.myId),900);}else this._sendToHost(msg);
-        },
-
         sendChestOpen(index,lootType){
 
 
@@ -5996,58 +5978,62 @@
 
 
     function spawnRemoteTracer(data) {
-
-
-
-
         const origin = new THREE.Vector3(data.ox, data.oy, data.oz);
-
-
-
-
-        const dir = new THREE.Vector3(data.dx, data.dy, data.dz);
-
-
-
-
+        const dir = new THREE.Vector3(data.dx, data.dy, data.dz).normalize();
         const endPoint = origin.clone().add(dir.clone().multiplyScalar(100));
-
-
-
-
-        const geometry = new THREE.BufferGeometry().setFromPoints([
-            origin,
-            endPoint
-        ]);
-
-
-
-
+        const geometry = new THREE.BufferGeometry().setFromPoints([origin, endPoint]);
         const tracer = new THREE.Line(geometry, tracerMaterial);
-
-
-
-
         scene.add(tracer);
-
-
-
-
         setTimeout(() => {
-
-
-
-
             scene.remove(tracer);
             geometry.dispose();
-
-
-
-
-        }, 35);
+        }, 70);
     }
 
+    function getCurrentMuzzleLocalPosition() {
+        if (currentWeapon === 'Pistol') return new THREE.Vector3(0, 0.045, -0.39);
+        if (currentWeapon === 'AR') return new THREE.Vector3(0, 0.01, -0.91);
+        if (currentWeapon === 'Shotgun') return new THREE.Vector3(0, 0.045, -0.89);
+        if (currentWeapon === 'SMG') return new THREE.Vector3(0, 0.02, -0.72);
+        if (currentWeapon === 'Sniper') return new THREE.Vector3(0, 0.02, -0.92);
+        return null;
+    }
 
+    function getActiveViewmodel() {
+        if (currentWeapon === 'Pistol') return viewmodelPistol;
+        if (currentWeapon === 'AR') return viewmodelAR;
+        if (currentWeapon === 'Shotgun') return viewmodelShotgun;
+        if (currentWeapon === 'SMG') return viewmodelSMG;
+        if (currentWeapon === 'Sniper') return viewmodelSniper;
+        return null;
+    }
+
+    function playMuzzleFlash() {
+        const weapon = getActiveViewmodel();
+        const localMuzzle = getCurrentMuzzleLocalPosition();
+        if (!weapon || !localMuzzle) return null;
+        const flash = new THREE.Group();
+        const core = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 8), new THREE.MeshBasicMaterial({ color: 0xfff1b0, transparent: true, opacity: 0.95 }));
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.34, 8), new THREE.MeshBasicMaterial({ color: 0xffb52e, transparent: true, opacity: 0.72 }));
+        cone.rotation.x = Math.PI / 2;
+        cone.position.z = -0.15;
+        flash.add(core, cone);
+        flash.position.copy(localMuzzle);
+        flash.scale.setScalar(0.85 + Math.random() * 0.35);
+        weapon.add(flash);
+        weapon.position.z -= 0.025;
+        weapon.rotation.x -= 0.025;
+        const light = new THREE.PointLight(0xffc75a, 1.8, 2.4, 2);
+        flash.add(light);
+        setTimeout(() => {
+            weapon.position.z += 0.025;
+            weapon.rotation.x += 0.025;
+            weapon.remove(flash);
+            core.geometry.dispose(); core.material.dispose();
+            cone.geometry.dispose(); cone.material.dispose();
+        }, 65);
+        return localMuzzle;
+    }
 
 
     // ---------- CONTROLS ----------
@@ -6130,15 +6116,13 @@
 
 
 
-    loading.style.display = 'none';
+    function finishLoadingScreen() {
+        if (loading) loading.style.display = 'none';
+        if (startOverlay) startOverlay.style.display = 'flex';
+    }
 
-
-
-
-    startOverlay.style.display =
-        'flex';
-
-
+    finishLoadingScreen();
+    setTimeout(finishLoadingScreen, 2500);
 
 
     // ---------- MENU NAVIGATION ----------
@@ -8059,7 +8043,6 @@
 
     function buildViewmodelSMG(){const g=createSMG();g.scale.set(.52,.52,.52);g.position.set(.34,-.34,-.58);g.rotation.y=-.12;g.userData.basePos={x:g.position.x,y:g.position.y};g.visible=false;return g;}
     function buildViewmodelSniper(){const g=createSniper();g.scale.set(.42,.42,.42);g.position.set(.36,-.34,-.64);g.rotation.y=-.10;g.userData.basePos={x:g.position.x,y:g.position.y};g.visible=false;return g;}
-    function buildViewmodelGrenade(){const g=createGrenade();g.scale.set(1.4,1.4,1.4);g.position.set(.34,-.34,-.58);g.userData.basePos={x:g.position.x,y:g.position.y};g.visible=false;return g;}
     function buildViewmodelBandage() {
         const group = new THREE.Group();
         const wrapMat = new THREE.MeshStandardMaterial({ color: 0xe7dcc6, roughness: 0.85 });
@@ -8214,7 +8197,7 @@
 
 
     const viewmodelShotgun =
-        buildViewmodelShotgun(); const viewmodelSMG=buildViewmodelSMG(); const viewmodelSniper=buildViewmodelSniper(); const viewmodelGrenade=buildViewmodelGrenade();
+        buildViewmodelShotgun(); const viewmodelSMG=buildViewmodelSMG(); const viewmodelSniper=buildViewmodelSniper();
 
 
 
@@ -8228,7 +8211,7 @@
     camera.add(viewmodelPistol);
     camera.add(viewmodelAR);
     camera.add(viewmodelShotgun);
-    camera.add(viewmodelSMG);camera.add(viewmodelSniper);camera.add(viewmodelGrenade);camera.add(viewmodelBandage);
+    camera.add(viewmodelSMG);camera.add(viewmodelSniper);camera.add(viewmodelBandage);
 
 
 
@@ -8266,7 +8249,7 @@
 
 
         viewmodelShotgun.visible =
-            type === 'Shotgun'; viewmodelSMG.visible=type==='SMG';viewmodelSniper.visible=type==='Sniper';viewmodelGrenade.visible=type==='Grenade';
+            type === 'Shotgun'; viewmodelSMG.visible=type==='SMG';viewmodelSniper.visible=type==='Sniper';
 
 
 
@@ -8402,15 +8385,6 @@
                     <path d="M3 20h34l7 3v4H23l-4 6h-7l2-6H3z" fill="currentColor"/>
                     <rect x="17" y="15" width="17" height="4" rx="2" fill="currentColor"/>
                     <rect x="24" y="12" width="3" height="8" rx="1" fill="currentColor"/>
-                </svg>`;
-        }
-
-        if (item.name === 'Grenade' || item.type === 'grenade') {
-            return `
-                <svg viewBox="0 0 48 48" aria-hidden="true">
-                    <path d="M19 13h10l2 5v3c3 2 5 5 5 9 0 7-4 11-12 11S12 37 12 30c0-4 2-7 5-9v-3z" fill="currentColor"/>
-                    <rect x="21" y="8" width="6" height="7" rx="2" fill="currentColor"/>
-                    <path d="M28 9h6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
                 </svg>`;
         }
 
@@ -8598,11 +8572,6 @@
             return;
         }
 
-        if (item.type === 'grenade') {
-            selectedSlot = index;
-            setWeapon('Grenade');
-            renderInventory();
-        }
     }
 
 
@@ -8634,7 +8603,7 @@
             groundItem = createBandage();
             groundItem.userData.pickupType = 'Bandage';
         } else if (item.type === 'weapon') {
-            if(item.name==='AR'){groundItem=createAR();}else if(item.name==='Shotgun'){groundItem=createShotgun();}else if(item.name==='SMG'){groundItem=createSMG();}else if(item.name==='Sniper'){groundItem=createSniper();}else if(item.name==='Grenade'){groundItem=createGrenade();}else{groundItem=createPistol();}
+            if(item.name==='AR'){groundItem=createAR();}else if(item.name==='Shotgun'){groundItem=createShotgun();}else if(item.name==='SMG'){groundItem=createSMG();}else if(item.name==='Sniper'){groundItem=createSniper();}else{groundItem=createPistol();}
             groundItem.userData.pickupType = item.name;
             groundItem.rotation.y = Math.random() * Math.PI;
         } else {
@@ -9055,7 +9024,6 @@
         }
         if(closest.userData.pickupType==='SMG'){const slot=addToInventory({type:'weapon',name:'SMG',icon:'SMG'});selectedSlot=slot;setWeapon('SMG');renderInventory();scene.remove(closest);return;}
         if(closest.userData.pickupType==='Sniper'){const slot=addToInventory({type:'weapon',name:'Sniper',icon:'SNP'});selectedSlot=slot;setWeapon('Sniper');renderInventory();scene.remove(closest);return;}
-        if(closest.userData.pickupType==='Grenade'){const slot=addToInventory({type:'grenade',name:'Grenade',icon:'GRN'});selectedSlot=slot;setWeapon('Grenade');renderInventory();scene.remove(closest);return;}
             if (
                 closest.userData.pickupType ===
                 'Shotgun'
@@ -9128,28 +9096,7 @@
 
 
     function isHeadHit(o){let n=o;while(n){const name=(n.name||'').toLowerCase();if(name==='head'||name==='headshot'||name==='headshot-hitbox')return true;n=n.parent;}return false;}
-    function explodeGrenade(position,killerId=null){
-        const blast=new THREE.Mesh(new THREE.SphereGeometry(.35,16,16),new THREE.MeshBasicMaterial({transparent:true,opacity:.55}));
-        blast.position.copy(position);scene.add(blast);setTimeout(()=>scene.remove(blast),220);
-        const radius=8;
-        if(!Net.enabled){
-            for(const bot of [...bots]){const d=Math.hypot(bot.rig.group.position.x-position.x,bot.rig.group.position.z-position.z);if(d<radius){const damage=100*(1-d/radius);bot.hp-=damage;bot.rig.drawBar(bot.hp);if(bot.hp<=0)killBot(bot);}}
-        }else if(Net.isHost){
-            const selfDistance=Math.hypot(camera.position.x-position.x,camera.position.z-position.z);if(selfDistance<radius){playerHP=Math.max(0,playerHP-100*(1-selfDistance/radius));updateHealth();}
-            for(const[id,p]of Net.players.entries()){const d=Math.hypot(p.targetPos.x-position.x,p.targetPos.z-position.z);if(d<radius)Net.sendDamage(id,Math.round(100*(1-d/radius)));}
-        }
-    }
-
-    function throwGrenade(){
-        if(playerDead||!isMouseLocked||selectedSlot<0)return;
-        const item=inventory[selectedSlot];if(!item||item.type!=='grenade')return;
-        const dir=new THREE.Vector3();camera.getWorldDirection(dir);const origin=camera.position.clone().add(dir.clone().multiplyScalar(1));
-        inventory[selectedSlot]=null;selectedSlot=-1;setWeapon(null);renderInventory();nextShotTime=performance.now()+900;
-        if(Net.enabled){Net.sendGrenade(origin,dir);}else{setTimeout(()=>explodeGrenade(origin),900);}
-    }
-
         function shoot(){
-        if(currentWeapon==='Grenade'){throwGrenade();return;}
         if (currentWeapon === 'Bandage') {
             if (selectedSlot >= 0) {
                 useBandage(selectedSlot);
@@ -9186,34 +9133,26 @@
 
 
 
-        // The shot itself
+        // The shot visual starts at the actual weapon muzzle.
+        const activeViewmodel = getActiveViewmodel();
+        const localMuzzle = playMuzzleFlash();
+        const muzzleWorld = activeViewmodel && localMuzzle
+            ? activeViewmodel.localToWorld(localMuzzle.clone())
+            : camera.position.clone();
 
-
-
-
-        const endPoint =
-            camera.position.clone().add(
-                shootDirection.clone().multiplyScalar(100)
-            );
-
-
-
+        const endPoint = muzzleWorld.clone().add(
+            shootDirection.clone().multiplyScalar(100)
+        );
 
         const points = [
-            camera.position.clone(),
+            muzzleWorld,
             endPoint
         ];
-
-
-
 
         const geometry =
             new THREE.BufferGeometry().setFromPoints(
                 points
             );
-
-
-
 
         const tracer =
             new THREE.Line(
@@ -9221,45 +9160,14 @@
                 tracerMaterial
             );
 
-
-
-
         scene.add(tracer);
 
+        setTimeout(() => {
+            scene.remove(tracer);
+            geometry.dispose();
+        }, 70);
 
-
-
-        // Remove tracers quickly so it does not lag
-
-
-
-
-        setTimeout(
-            () => {
-
-
-
-
-                scene.remove(
-                    tracer
-                );
-
-
-
-
-                geometry.dispose();
-
-
-
-
-            },
-            100
-        );
-
-
-
-
-        Net.sendShoot(camera.position, shootDirection);
+        Net.sendShoot(muzzleWorld, shootDirection);
 
 
 
@@ -10616,7 +10524,7 @@
                     ? viewmodelPistol
                     : currentWeapon === 'AR'
                     ? viewmodelAR
-                    : currentWeapon==='Shotgun'?viewmodelShotgun:currentWeapon==='SMG'?viewmodelSMG:currentWeapon==='Sniper'?viewmodelSniper:currentWeapon==='Grenade'?viewmodelGrenade:null;
+                    : currentWeapon==='Shotgun'?viewmodelShotgun:currentWeapon==='SMG'?viewmodelSMG:currentWeapon==='Sniper'?viewmodelSniper:null;
 
 
 
