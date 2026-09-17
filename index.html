@@ -4427,6 +4427,7 @@
             (gltf) => {
                 const oldHead = gltf.scene;
                 oldHead.scale.set(1.8, 1.8, 1.8);
+                oldHead.rotation.y = Math.PI;
                 oldHead.position.set(0, 0.18, 0);
                 oldHead.traverse((child) => {
                     if (child.isMesh) {
