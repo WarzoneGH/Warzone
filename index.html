@@ -4427,7 +4427,6 @@
             (gltf) => {
                 const oldHead = gltf.scene;
                 oldHead.scale.set(1.8, 1.8, 1.8);
-                oldHead.rotation.y = Math.PI;
                 oldHead.position.set(0, 0.18, 0);
                 oldHead.traverse((child) => {
                     if (child.isMesh) {
@@ -6260,6 +6259,15 @@
 
 
         Net.enabled = false;
+        
+        for (let i = 0; i < inventory.length; i++) {
+            inventory[i] = null;
+        }
+
+        selectedSlot = -1;
+        renderInventory();
+        setWeapon(null);
+
         if (bots.length === 0 && botsKilled === 0) {
             spawnBot();
         }
@@ -8594,9 +8602,9 @@
 
 
         groundItem.position.set(
-            camera.position.x + dropDirection.x * 2.2,
+            camera.position.x + dropDirection.x * 3.0,
             0,
-            camera.position.z + dropDirection.z * 2.2
+            camera.position.z + dropDirection.z * 3.0
         );
 
 
