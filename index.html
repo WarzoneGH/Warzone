@@ -3512,18 +3512,20 @@
 
 
 
-    function spawnChestLoot(chest, forcedType = null) {
-        const types = ['Pistol', 'AR', 'Shotgun', 'SMG', 'Sniper', 'Bandage'];
+    function spawnChestLoot(chest, forcedType = null, forcedBandage = null) {
+        const types = ['Pistol', 'AR', 'Shotgun', 'SMG', 'Sniper'];
         const type = forcedType || types[Math.floor(Math.random() * types.length)];
+        const hasBandage = forcedBandage !== null ? forcedBandage : Math.random() < 0.95;
         chest.userData.lootType = type;
+        chest.userData.lootBandage = hasBandage;
+
         let item;
-        if (type === 'Bandage') item = createBandage();
-        else if (type === 'Pistol') item = createPistol();
+        if (type === 'Pistol') item = createPistol();
         else if (type === 'AR') item = createAR();
         else if (type === 'Shotgun') item = createShotgun();
         else if (type === 'SMG') item = createSMG();
         else if (type === 'Sniper') item = createSniper();
-        else item = createBandage();
+
         const angle = Math.random() * Math.PI * 2;
         const distance = 1.2 + Math.random() * 1.2;
         item.position.set(chest.position.x + Math.cos(angle) * distance, 0, chest.position.z + Math.sin(angle) * distance);
@@ -3531,6 +3533,17 @@
         item.userData.pickupType = type;
         groundItems.push(item);
         scene.add(item);
+
+        if (hasBandage) {
+            const bandage = createBandage();
+            const bandageAngle = angle + 0.9;
+            const bandageDistance = 1.2 + Math.random() * 1.2;
+            bandage.position.set(chest.position.x + Math.cos(bandageAngle) * bandageDistance, 0, chest.position.z + Math.sin(bandageAngle) * bandageDistance);
+            bandage.rotation.y = Math.random() * Math.PI;
+            bandage.userData.pickupType = 'Bandage';
+            groundItems.push(bandage);
+            scene.add(bandage);
+        }
     }
 
 
@@ -5503,10 +5516,10 @@
                     const chest = chests.find(c => c.userData.netIndex === data.index);
                     if (chest && !chest.userData.opened) {
                         if (this.isHost) {
-                            openChest(chest, true, data.lootType || null);
-                            this._broadcast({ type: 'chestOpen', index: data.index, lootType: chest.userData.lootType }, fromId);
+                            openChest(chest, true, data.lootType || null, data.lootBandage);
+                            this._broadcast({ type: 'chestOpen', index: data.index, lootType: chest.userData.lootType, lootBandage: chest.userData.lootBandage }, fromId);
                         } else {
-                            openChest(chest, true, data.lootType);
+                            openChest(chest, true, data.lootType, data.lootBandage);
                         }
                     }
                     break;
@@ -5692,7 +5705,7 @@
 
 
 
-        sendChestOpen(index,lootType){
+        sendChestOpen(index,lootType,lootBandage){
 
 
 
@@ -5702,7 +5715,7 @@
 
 
 
-            const msg={type:'chestOpen',index,lootType};
+            const msg={type:'chestOpen',index,lootType,lootBandage};
 
 
 
@@ -8644,7 +8657,7 @@
 
 
 
-    function openChest(chest,fromNetwork,forcedLootType=null){
+    function openChest(chest,fromNetwork,forcedLootType=null,forcedBandage=null){
 
 
 
@@ -8683,7 +8696,7 @@
 
 
 
-        spawnChestLoot(chest,forcedLootType);
+        spawnChestLoot(chest,forcedLootType,forcedBandage);
 
 
 
@@ -8693,7 +8706,7 @@
 
 
 
-            Net.sendChestOpen(chest.userData.netIndex,chest.userData.lootType);
+            Net.sendChestOpen(chest.userData.netIndex,chest.userData.lootType,chest.userData.lootBandage);
         }
 
 
