@@ -373,49 +373,6 @@
 
 
 
-    /* ---------- GLOBAL ONLINE COUNT ---------- */
-
-    #global-online-ui {
-        position: fixed;
-        right: 24px;
-        bottom: 22px;
-        z-index: 120;
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        padding: 9px 13px;
-        border: 1px solid rgba(207,106,44,.45);
-        background: rgba(10,7,5,.78);
-        color: var(--c-parchment);
-        font-family: var(--font-mono);
-        font-size: 10px;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-        box-shadow: 0 8px 24px rgba(0,0,0,.25);
-        backdrop-filter: blur(4px);
-    }
-
-    #global-online-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: #76b852;
-        box-shadow: 0 0 9px rgba(118,184,82,.7);
-        flex: 0 0 auto;
-    }
-
-    #global-online-count {
-        min-width: 18px;
-        text-align: right;
-        color: var(--c-parchment);
-        font-weight: 700;
-    }
-
-    /* ---------- MULTIPLAYER-PANEL ---------- */
-
-
-
-
     #start-overlay { cursor: default; }
 
 
@@ -1232,11 +1189,6 @@
 
 
 
-<div id="global-online-ui" aria-live="polite" title="Players currently active in the game worldwide">
-    <span id="global-online-dot"></span>
-    <span><span id="global-online-count">0</span> ONLINE WORLDWIDE</span>
-</div>
-
 
 <div id="weapon-ui">
     Weapon: Hands
@@ -1268,50 +1220,6 @@
 
 
 
-
-    // Global online presence: records a short-lived unique session event and
-    // reads the number of unique active game sessions worldwide.
-    const globalOnlineCountEl = document.getElementById('global-online-count');
-    const globalOnlineSessionId = (window.crypto && crypto.randomUUID)
-        ? crypto.randomUUID()
-        : ('session-' + Date.now() + '-' + Math.random().toString(36).slice(2));
-    const GLOBAL_ONLINE_NS = 'macope1212.github.io';
-    const GLOBAL_ONLINE_ACTION = 'online';
-    const GLOBAL_ONLINE_HEARTBEAT_MS = 30 * 1000;
-    const GLOBAL_ONLINE_WINDOW = '2m';
-
-    async function updateGlobalOnlineCount() {
-        try {
-            const userId = encodeURIComponent(globalOnlineSessionId);
-            await fetch(
-                'https://counterapi.com/api/' + GLOBAL_ONLINE_NS +
-                '/' + GLOBAL_ONLINE_ACTION + '/' + userId +
-                '?userId=' + userId + '&trackOnly=true',
-                { cache: 'no-store', keepalive: true }
-            );
-
-            const response = await fetch(
-                'https://counterapi.com/api/' + GLOBAL_ONLINE_NS +
-                '/' + GLOBAL_ONLINE_ACTION + '/any?timeline=' + GLOBAL_ONLINE_WINDOW +
-                '&unique=true&readOnly=true',
-                { cache: 'no-store' }
-            );
-
-            if (!response.ok) return;
-            const data = await response.json();
-            const count = Math.max(0, Number(data.value) || 0);
-            globalOnlineCountEl.textContent = String(count);
-        } catch (error) {
-            // Keep the last successful value if the public counter service is temporarily unavailable.
-        }
-    }
-
-    updateGlobalOnlineCount();
-    const globalOnlineTimer = setInterval(updateGlobalOnlineCount, GLOBAL_ONLINE_HEARTBEAT_MS);
-
-    window.addEventListener('pagehide', () => {
-        clearInterval(globalOnlineTimer);
-    });
 
     const scene = new THREE.Scene();
 
@@ -6122,7 +6030,9 @@
     }
 
     finishLoadingScreen();
-    setTimeout(finishLoadingScreen, 2500);
+    setTimeout(() => {
+        if (!gameStarted) finishLoadingScreen();
+    }, 2500);
 
 
     // ---------- MENU NAVIGATION ----------
@@ -9118,17 +9028,12 @@
 
 
 
-        camera.getWorldDirection(
-            shootDirection
+        raycaster.setFromCamera(
+            new THREE.Vector2(0, 0),
+            camera
         );
 
-
-
-
-        raycaster.set(
-            camera.position,
-            shootDirection
-        );
+        shootDirection.copy(raycaster.ray.direction);
 
 
 
