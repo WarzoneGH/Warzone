@@ -657,6 +657,10 @@
 
 
 
+    #kill-feed-ui{position:absolute;top:150px;right:20px;width:270px;z-index:31;pointer-events:none}.kill-feed-row{margin-bottom:5px;padding:7px 10px;background:rgba(13,10,7,.72);border-left:2px solid var(--c-accent);font-family:var(--font-mono);font-size:10px;letter-spacing:.8px;color:var(--c-parchment);text-align:right}
+    #leaderboard-ui{position:absolute;top:20px;left:20px;width:230px;padding:12px 14px;box-sizing:border-box;background:rgba(13,10,7,.78);border:1px solid var(--c-line);z-index:30;pointer-events:none;display:none}.leaderboard-title{font-family:var(--font-display);color:var(--c-parchment);font-size:20px;letter-spacing:2px;margin-bottom:7px;border-bottom:1px solid var(--c-line);padding-bottom:5px}.leaderboard-row{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;letter-spacing:.8px;color:rgba(236,225,200,.78);padding:3px 0}.leaderboard-row.you{color:var(--c-accent)}
+    #respawn-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:190;background:radial-gradient(ellipse at center,rgba(90,60,32,.42),rgba(5,3,2,.92) 72%);pointer-events:none}.respawn-panel{min-width:300px;padding:34px 44px 30px;text-align:center;background:linear-gradient(180deg,rgba(22,16,10,.9),rgba(10,7,5,.96));border:1px solid var(--c-line)}.respawn-eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:3px;color:var(--c-sand);margin-bottom:10px}.respawn-countdown{font-family:var(--font-display);font-size:88px;line-height:.9;color:var(--c-parchment);text-shadow:0 0 26px rgba(207,106,44,.35)}.respawn-status{margin-top:8px;font-family:var(--font-mono);font-size:10px;letter-spacing:2px;color:rgba(236,225,200,.58)}
+
     #interaction {
         position: absolute;
         left: 50%;
@@ -1183,6 +1187,9 @@
 
 <div id="bots-killed-ui">Bots killed: 0</div>
 <div id="kills-ui">Kills 0</div>
+<div id="leaderboard-ui"></div>
+<div id="kill-feed-ui"></div>
+<div id="respawn-overlay"><div class="respawn-panel"><div class="respawn-eyebrow">SECTOR 7 · REDEPLOY</div><div id="respawn-countdown" class="respawn-countdown">3</div><div class="respawn-status">RETURNING TO COMBAT</div></div></div>
 
 
 
@@ -3384,6 +3391,11 @@
 
 
 
+    function createSMG(){const g=new THREE.Group();const b=new THREE.Mesh(new THREE.BoxGeometry(.68,.16,.16),matGun);b.position.set(.1,.28,0);g.add(b);const br=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.22,8),matGunLight);br.rotation.z=Math.PI/2;br.position.set(.53,.28,0);g.add(br);const st=new THREE.Mesh(new THREE.BoxGeometry(.28,.12,.14),matGunAccent);st.position.set(-.35,.3,0);g.add(st);const gr=new THREE.Mesh(new THREE.BoxGeometry(.14,.3,.15),matGunGrip);gr.position.set(-.03,.02,0);gr.rotation.z=-.3;g.add(gr);g.rotation.z=-Math.PI/2;return g;}
+    function createSniper(){const g=new THREE.Group();const b=new THREE.Mesh(new THREE.BoxGeometry(1.05,.15,.15),matGun);b.position.set(.05,.32,0);g.add(b);const br=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.85,8),matGunLight);br.rotation.z=Math.PI/2;br.position.set(.82,.35,0);g.add(br);const sc=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.34,10),matGunAccent);sc.rotation.z=Math.PI/2;sc.position.set(.18,.48,0);g.add(sc);const st=new THREE.Mesh(new THREE.BoxGeometry(.5,.2,.15),matGunWood);st.position.set(-.58,.25,0);g.add(st);g.rotation.z=-Math.PI/2;return g;}
+
+    function createGrenade(){const g=new THREE.Group();const body=new THREE.Mesh(new THREE.SphereGeometry(.16,12,12),matGun);body.position.y=.2;g.add(body);const pin=new THREE.Mesh(new THREE.TorusGeometry(.045,.012,6,10),matGunLight);pin.position.set(.08,.35,0);g.add(pin);return g;}
+
     function createBandage() {
 
 
@@ -3505,96 +3517,27 @@
 
 
 
-    function spawnChestLoot(chest) {
-
-
-
-
-        const roll = Math.random();
-
-
-
-
-        let weaponType;
-        let weaponMesh;
-
-
-
-
-        if (roll < 0.4) {
-            weaponType = 'Pistol';
-            weaponMesh = createPistol();
-        } else if (roll < 0.75) {
-            weaponType = 'AR';
-            weaponMesh = createAR();
-        } else {
-            weaponType = 'Shotgun';
-            weaponMesh = createShotgun();
-        }
-
-
-
-
-        weaponMesh.position.set(
-            chest.position.x + 2.0,
-            0,
-            chest.position.z
-        );
-
-
-
-
-        weaponMesh.rotation.y =
-            Math.random() * Math.PI;
-
-
-
-
-        weaponMesh.userData.pickupType =
-            weaponType;
-
-
-
-
-        groundItems.push(weaponMesh);
-
-
-
-
-        scene.add(weaponMesh);
-
-
-
-
-        const bandage = createBandage();
-
-
-
-
-        bandage.position.set(
-            chest.position.x - 2.0,
-            0,
-            chest.position.z
-        );
-
-
-
-
-        bandage.userData.pickupType =
-            'Bandage';
-
-
-
-
-        groundItems.push(bandage);
-
-
-
-
-        scene.add(bandage);
+    function spawnChestLoot(chest, forcedType = null) {
+        const types = ['Pistol', 'AR', 'Shotgun', 'SMG', 'Sniper', 'Grenade', 'Bandage'];
+        const type = forcedType || types[Math.floor(Math.random() * types.length)];
+        chest.userData.lootType = type;
+        let item;
+        if (type === 'Bandage') item = createBandage();
+        else if (type === 'Pistol') item = createPistol();
+        else if (type === 'AR') item = createAR();
+        else if (type === 'Shotgun') item = createShotgun();
+        else if (type === 'SMG') item = createSMG();
+        else if (type === 'Sniper') item = createSniper();
+        else if (type === 'Grenade') item = createGrenade();
+        else item = createBandage();
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 1.2 + Math.random() * 1.2;
+        item.position.set(chest.position.x + Math.cos(angle) * distance, 0, chest.position.z + Math.sin(angle) * distance);
+        item.rotation.y = Math.random() * Math.PI;
+        item.userData.pickupType = type;
+        groundItems.push(item);
+        scene.add(item);
     }
-
-
 
 
     // ---------- WORLD ----------
@@ -5227,9 +5170,7 @@
                 rig,
                 targetPos: new THREE.Vector3(0, 0, 0),
                 targetYaw: 0,
-                hp: 100,
-                weapon: null,
-                colorHex
+                hp:100,weapon:null,kills:0,dead:false,colorHex
             });
         },
 
@@ -5332,7 +5273,7 @@
 
 
 
-            } else if (weaponType === 'Bandage') {
+            } else if (weaponType === 'SMG') { p.rig.currentWeaponMesh=createSMG(); p.rig.currentWeaponMesh.scale.set(.8,.8,.8); p.rig.weaponSlot.add(p.rig.currentWeaponMesh); } else if (weaponType === 'Sniper') { p.rig.currentWeaponMesh=createSniper(); p.rig.currentWeaponMesh.scale.set(.8,.8,.8); p.rig.weaponSlot.add(p.rig.currentWeaponMesh); } else if (weaponType === 'Grenade') { p.rig.currentWeaponMesh=createGrenade(); p.rig.currentWeaponMesh.scale.set(.9,.9,.9); p.rig.weaponSlot.add(p.rig.currentWeaponMesh); } else if (weaponType === 'Bandage') {
 
 
 
@@ -5395,7 +5336,7 @@
 
 
                         if (chest) {
-                            openChest(chest, true);
+                            openChest(chest,true);
                         }
                     }
 
@@ -5512,8 +5453,7 @@
 
                         p.targetPos.set(data.x, data.y - PLAYER_EYE_HEIGHT, data.z);
                         p.targetYaw = data.ry;
-                        p.hp = data.hp;
-                        p.kills = data.kills || 0;
+                        p.hp=data.hp;p.dead=data.hp<=0;p.kills=data.kills||0;
                         p.rig.drawBar(data.hp);
 
 
@@ -5542,7 +5482,13 @@
 
 
 
-                case 'shoot': {
+                case 'grenade':{
+                    if(this.isHost)this._broadcast(data,fromId);
+                    setTimeout(()=>explodeGrenade(new THREE.Vector3(data.ox,data.oy,data.oz),data.fromId),900);
+                    break;
+                }
+
+                case 'killFeed':{addKillFeed(data.killerId===this.myId?'YOU':shortPlayerId(data.killerId),data.victimId===this.myId?'YOU':shortPlayerId(data.victimId));break;} case 'shoot':{
 
 
 
@@ -5566,36 +5512,17 @@
 
 
                 case 'chestOpen': {
-
-
-
-
-                    if (this.isHost) {
-                        this._broadcast(data, fromId);
-                    }
-
-
-
-
-                    const chest = chests.find(
-                        c => c.userData.netIndex === data.index
-                    );
-
-
-
-
+                    const chest = chests.find(c => c.userData.netIndex === data.index);
                     if (chest && !chest.userData.opened) {
-                        openChest(chest, true);
+                        if (this.isHost) {
+                            openChest(chest, true, data.lootType || null);
+                            this._broadcast({ type: 'chestOpen', index: data.index, lootType: chest.userData.lootType }, fromId);
+                        } else {
+                            openChest(chest, true, data.lootType);
+                        }
                     }
-
-
-
-
                     break;
                 }
-
-
-
 
                 case 'damage': {
 
@@ -5610,30 +5537,43 @@
 
 
                         if (data.targetId === this.myId) {
+                            const wasAlive = playerHP > 0;
                             playerHP = Math.max(0, playerHP - data.amount);
                             updateHealth();
                             this.nextStateSend = 0;
                             this.sendState();
+                            if (wasAlive && playerHP <= 0) {
+                                addKillFeed(data.fromId === this.myId ? 'YOU' : shortPlayerId(data.fromId), 'YOU');
+                                this._broadcast({ type:'killFeed', killerId:data.fromId, victimId:this.myId }, null);
+                                if (data.fromId === this.myId) {
+                                    kills++;
+                                    updateKills();
+                                } else {
+                                    const killer = this.players.get(data.fromId);
+                                    if (killer) {
+                                        killer.kills = (killer.kills || 0) + 1;
+                                        const killerConn = this.connections.get(data.fromId);
+                                        if (killerConn) {
+                                            try { killerConn.send({ type:'kills', kills:killer.kills }); } catch(err) {}
+                                        }
+                                    }
+                                }
+                            }
                         } else {
+                            const target = this.players.get(data.targetId);
                             const targetConn = this.connections.get(data.targetId);
-
-
-
-
+                            if (target && !target.dead) target.hp = Math.max(0, target.hp - data.amount);
                             if (targetConn) {
-                                try {
-                                    targetConn.send({
-                                        type: 'damage',
-                                        targetId: data.targetId,
-                                        amount: data.amount,
-                                        fromId: data.fromId
-                                    });
-                                } catch (err) {}
+                                try { targetConn.send({ type:'damage', targetId:data.targetId, amount:data.amount, fromId:data.fromId }); } catch(err) {}
+                            }
+                            if (target && target.hp <= 0 && !target.dead) {
+                                target.dead = true;
+                                addKillFeed(data.fromId === this.myId ? 'YOU' : shortPlayerId(data.fromId), shortPlayerId(data.targetId));
+                                this._broadcast({ type:'killFeed', killerId:data.fromId, victimId:data.targetId }, null);
+                                if (data.fromId === this.myId) { kills++; updateKills(); }
+                                else { const killer=this.players.get(data.fromId); if(killer){ killer.kills=(killer.kills||0)+1; const killerConn=this.connections.get(data.fromId); if(killerConn){ try{killerConn.send({type:'kills',kills:killer.kills});}catch(err){} } } }
                             }
                         }
-
-
-
 
                         break;
                     }
@@ -5764,7 +5704,13 @@
 
 
 
-        sendChestOpen(index) {
+        sendGrenade(origin,dir){
+            if(!this.enabled)return;
+            const msg={type:'grenade',ox:origin.x,oy:origin.y,oz:origin.z,dx:dir.x,dy:dir.y,dz:dir.z,fromId:this.myId};
+            if(this.isHost){this._broadcast(msg,null);setTimeout(()=>explodeGrenade(origin,this.myId),900);}else this._sendToHost(msg);
+        },
+
+        sendChestOpen(index,lootType){
 
 
 
@@ -5774,7 +5720,7 @@
 
 
 
-            const msg = { type: 'chestOpen', index };
+            const msg={type:'chestOpen',index,lootType};
 
 
 
@@ -5855,22 +5801,12 @@
 
 
 
-                    if (target && target.hp <= 0) {
-                        if (data.fromId === this.myId) {
-                            kills++;
-                            updateKills();
-                        } else {
-                            const killer = this.players.get(data.fromId);
-                            if (killer) {
-                                killer.kills = (killer.kills || 0) + 1;
-                                const killerConn = this.connections.get(data.fromId);
-                                if (killerConn) {
-                                    try {
-                                        killerConn.send({ type: 'kills', kills: killer.kills });
-                                    } catch (err) {}
-                                }
-                            }
-                        }
+                    if (target && target.hp <= 0 && !target.dead) {
+                        target.dead = true;
+                        addKillFeed('YOU', shortPlayerId(targetId));
+                        this._broadcast({ type: 'killFeed', killerId: this.myId, victimId: targetId }, null);
+                        kills++;
+                        updateKills();
                     }
                 }
 
@@ -6543,7 +6479,7 @@
         paused = false;
         playerDead = false;
         pauseOverlay.style.display = 'none';
-        deathOverlay.style.display = 'none';
+        deathOverlay.style.display='none';respawnOverlay.style.display='none';
 
 
 
@@ -6886,19 +6822,7 @@
 
 
 
-            if (Net.enabled) {
-                if (document.pointerLockElement) {
-                    document.exitPointerLock();
-                }
-
-
-
-
-                setTimeout(() => {
-                    if (Net.enabled && playerDead) {
-                        resetGame();
-                    }
-                }, 700);
+            if(Net.enabled){if(document.pointerLockElement)document.exitPointerLock();respawnEndTime=performance.now()+3000;respawnCountdownEl.textContent='3';respawnOverlay.style.display='flex';clearInterval(respawnTimer);respawnTimer=setInterval(()=>{const r=respawnEndTime-performance.now();respawnCountdownEl.textContent=String(Math.max(1,Math.ceil(r/1000)));if(r<=0){clearInterval(respawnTimer);respawnTimer=null;respawnOverlay.style.display='none';resetGame();}},100);
             } else {
                 deathOverlay.style.display = 'flex';
 
@@ -7109,6 +7033,10 @@
         killsLabel.textContent =
             'Kills ' + kills;
     }
+    const leaderboardEl=document.getElementById('leaderboard-ui'),respawnOverlay=document.getElementById('respawn-overlay'),respawnCountdownEl=document.getElementById('respawn-countdown');let respawnTimer=null,respawnEndTime=0;const killFeedEntries=[];
+    function addKillFeed(killer,victim){const f=document.getElementById('kill-feed-ui');if(!f)return;const r=document.createElement('div');r.className='kill-feed-row';r.textContent=killer+'  ▸  '+victim;f.appendChild(r);setTimeout(()=>{if(r.parentNode)r.parentNode.removeChild(r);},5000);}
+    function shortPlayerId(id){if(!id)return'PLAYER';return id===Net.myId?'YOU':id.slice(-6).toUpperCase();}
+    function updateLeaderboard(){if(!Net.enabled){leaderboardEl.style.display='none';return;}const rows=[{name:'YOU',kills}];for(const[id,p]of Net.players)rows.push({name:shortPlayerId(id),kills:p.kills||0});rows.sort((a,b)=>b.kills-a.kills);leaderboardEl.innerHTML='<div class="leaderboard-title">LEADERBOARD</div>'+rows.map((r,i)=>'<div class="leaderboard-row'+(r.name==='YOU'?' you':'')+'"><span>'+(i+1)+'. '+r.name+'</span><span>'+r.kills+'</span></div>').join('');leaderboardEl.style.display='block';}
     const botsKilledLabel =
         document.getElementById('bots-killed-ui');
     const BOT_HP = 100;
@@ -7598,11 +7526,7 @@
 
 
 
-        botsKilled++;
-        updateBotsKilled();
-        kills++;
-        updateKills();
-        spawnBotsAfterKill();
+        if(Math.random()<.10){const bandage=createBandage();bandage.position.set(bot.rig.group.position.x,0,bot.rig.group.position.z);bandage.userData.pickupType='Bandage';groundItems.push(bandage);scene.add(bandage);}botsKilled++;updateBotsKilled();kills++;updateKills();addKillFeed('YOU','BOT');spawnBotsAfterKill();
     }
 
 
@@ -7771,6 +7695,8 @@
 
 
 
+        if (weaponType === 'SMG') { return 18; }
+        if (weaponType === 'Sniper') { return 85; }
         if (weaponType === 'Shotgun') {
 
 
@@ -8039,6 +7965,9 @@
 
 
 
+    function buildViewmodelSMG(){const g=createSMG();g.scale.set(.52,.52,.52);g.position.set(.34,-.34,-.58);g.rotation.y=-.12;g.userData.basePos={x:g.position.x,y:g.position.y};g.visible=false;return g;}
+    function buildViewmodelSniper(){const g=createSniper();g.scale.set(.42,.42,.42);g.position.set(.36,-.34,-.64);g.rotation.y=-.10;g.userData.basePos={x:g.position.x,y:g.position.y};g.visible=false;return g;}
+    function buildViewmodelGrenade(){const g=createGrenade();g.scale.set(1.4,1.4,1.4);g.position.set(.34,-.34,-.58);g.userData.basePos={x:g.position.x,y:g.position.y};g.visible=false;return g;}
     function buildViewmodelBandage() {
         const group = new THREE.Group();
         const wrapMat = new THREE.MeshStandardMaterial({ color: 0xe7dcc6, roughness: 0.85 });
@@ -8193,7 +8122,7 @@
 
 
     const viewmodelShotgun =
-        buildViewmodelShotgun();
+        buildViewmodelShotgun(); const viewmodelSMG=buildViewmodelSMG(); const viewmodelSniper=buildViewmodelSniper(); const viewmodelGrenade=buildViewmodelGrenade();
 
 
 
@@ -8207,7 +8136,7 @@
     camera.add(viewmodelPistol);
     camera.add(viewmodelAR);
     camera.add(viewmodelShotgun);
-    camera.add(viewmodelBandage);
+    camera.add(viewmodelSMG);camera.add(viewmodelSniper);camera.add(viewmodelGrenade);camera.add(viewmodelBandage);
 
 
 
@@ -8245,7 +8174,7 @@
 
 
         viewmodelShotgun.visible =
-            type === 'Shotgun';
+            type === 'Shotgun'; viewmodelSMG.visible=type==='SMG';viewmodelSniper.visible=type==='Sniper';viewmodelGrenade.visible=type==='Grenade';
 
 
 
@@ -8323,8 +8252,12 @@
         if (item.type === 'bandage') {
             return `
                 <svg viewBox="0 0 48 48" aria-hidden="true">
-                    <rect x="10" y="17" width="28" height="14" rx="7" transform="rotate(-35 24 24)" fill="none" stroke="currentColor" stroke-width="4"/>
-                    <path d="M24 17v14M17 24h14" stroke="#d65b4b" stroke-width="3" stroke-linecap="round"/>
+                    <g transform="rotate(-35 24 24)">
+                        <rect x="7" y="16" width="34" height="16" rx="8" fill="currentColor" opacity="0.22"/>
+                        <rect x="9" y="17" width="30" height="14" rx="7" fill="none" stroke="currentColor" stroke-width="3"/>
+                        <rect x="19" y="18.5" width="10" height="11" rx="2" fill="currentColor" opacity="0.16"/>
+                        <path d="M24 20v8M20 24h8" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
+                    </g>
                 </svg>`;
         }
 
@@ -8362,8 +8295,32 @@
                 </svg>`;
         }
 
+        if (item.name === 'SMG') {
+            return `
+                <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <path d="M5 19h24l6 3-4 5H22l-2 9h-7l2-9H5z" fill="currentColor"/>
+                    <rect x="28" y="17" width="14" height="5" rx="1.5" fill="currentColor"/>
+                    <path d="M21 27l4 1-2 10h-5z" fill="currentColor"/>
+                </svg>`;
+        }
 
+        if (item.name === 'Sniper') {
+            return `
+                <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <path d="M3 20h34l7 3v4H23l-4 6h-7l2-6H3z" fill="currentColor"/>
+                    <rect x="17" y="15" width="17" height="4" rx="2" fill="currentColor"/>
+                    <rect x="24" y="12" width="3" height="8" rx="1" fill="currentColor"/>
+                </svg>`;
+        }
 
+        if (item.name === 'Grenade' || item.type === 'grenade') {
+            return `
+                <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <path d="M19 13h10l2 5v3c3 2 5 5 5 9 0 7-4 11-12 11S12 37 12 30c0-4 2-7 5-9v-3z" fill="currentColor"/>
+                    <rect x="21" y="8" width="6" height="7" rx="2" fill="currentColor"/>
+                    <path d="M28 9h6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                </svg>`;
+        }
 
         return '';
     }
@@ -8546,6 +8503,13 @@
             selectedSlot = index;
             setWeapon('Bandage');
             renderInventory();
+            return;
+        }
+
+        if (item.type === 'grenade') {
+            selectedSlot = index;
+            setWeapon('Grenade');
+            renderInventory();
         }
     }
 
@@ -8578,13 +8542,7 @@
             groundItem = createBandage();
             groundItem.userData.pickupType = 'Bandage';
         } else if (item.type === 'weapon') {
-            if (item.name === 'AR') {
-                groundItem = createAR();
-            } else if (item.name === 'Shotgun') {
-                groundItem = createShotgun();
-            } else {
-                groundItem = createPistol();
-            }
+            if(item.name==='AR'){groundItem=createAR();}else if(item.name==='Shotgun'){groundItem=createShotgun();}else if(item.name==='SMG'){groundItem=createSMG();}else if(item.name==='Sniper'){groundItem=createSniper();}else if(item.name==='Grenade'){groundItem=createGrenade();}else{groundItem=createPistol();}
             groundItem.userData.pickupType = item.name;
             groundItem.rotation.y = Math.random() * Math.PI;
         } else {
@@ -8715,7 +8673,7 @@
 
 
 
-    function openChest(chest, fromNetwork) {
+    function openChest(chest,fromNetwork,forcedLootType=null){
 
 
 
@@ -8754,7 +8712,7 @@
 
 
 
-        spawnChestLoot(chest);
+        spawnChestLoot(chest,forcedLootType);
 
 
 
@@ -8764,7 +8722,7 @@
 
 
 
-            Net.sendChestOpen(chest.userData.netIndex);
+            Net.sendChestOpen(chest.userData.netIndex,chest.userData.lootType);
         }
 
 
@@ -9003,14 +8961,13 @@
 
             return;
         }
-
-
-
-
-        if (
-            closest.userData.pickupType ===
-            'Shotgun'
-        ) {
+        if(closest.userData.pickupType==='SMG'){const slot=addToInventory({type:'weapon',name:'SMG',icon:'SMG'});selectedSlot=slot;setWeapon('SMG');renderInventory();scene.remove(closest);return;}
+        if(closest.userData.pickupType==='Sniper'){const slot=addToInventory({type:'weapon',name:'Sniper',icon:'SNP'});selectedSlot=slot;setWeapon('Sniper');renderInventory();scene.remove(closest);return;}
+        if(closest.userData.pickupType==='Grenade'){const slot=addToInventory({type:'grenade',name:'Grenade',icon:'GRN'});selectedSlot=slot;setWeapon('Grenade');renderInventory();scene.remove(closest);return;}
+            if (
+                closest.userData.pickupType ===
+                'Shotgun'
+            ) {
 
 
 
@@ -9078,7 +9035,29 @@
 
 
 
-    function shoot() {
+    function isHeadHit(o){let n=o;while(n){const name=(n.name||'').toLowerCase();if(name==='head'||name==='headshot'||name==='headshot-hitbox')return true;n=n.parent;}return false;}
+    function explodeGrenade(position,killerId=null){
+        const blast=new THREE.Mesh(new THREE.SphereGeometry(.35,16,16),new THREE.MeshBasicMaterial({transparent:true,opacity:.55}));
+        blast.position.copy(position);scene.add(blast);setTimeout(()=>scene.remove(blast),220);
+        const radius=8;
+        if(!Net.enabled){
+            for(const bot of [...bots]){const d=Math.hypot(bot.rig.group.position.x-position.x,bot.rig.group.position.z-position.z);if(d<radius){const damage=100*(1-d/radius);bot.hp-=damage;bot.rig.drawBar(bot.hp);if(bot.hp<=0)killBot(bot);}}
+        }else if(Net.isHost){
+            const selfDistance=Math.hypot(camera.position.x-position.x,camera.position.z-position.z);if(selfDistance<radius){playerHP=Math.max(0,playerHP-100*(1-selfDistance/radius));updateHealth();}
+            for(const[id,p]of Net.players.entries()){const d=Math.hypot(p.targetPos.x-position.x,p.targetPos.z-position.z);if(d<radius)Net.sendDamage(id,Math.round(100*(1-d/radius)));}
+        }
+    }
+
+    function throwGrenade(){
+        if(playerDead||!isMouseLocked||selectedSlot<0)return;
+        const item=inventory[selectedSlot];if(!item||item.type!=='grenade')return;
+        const dir=new THREE.Vector3();camera.getWorldDirection(dir);const origin=camera.position.clone().add(dir.clone().multiplyScalar(1));
+        inventory[selectedSlot]=null;selectedSlot=-1;setWeapon(null);renderInventory();nextShotTime=performance.now()+900;
+        if(Net.enabled){Net.sendGrenade(origin,dir);}else{setTimeout(()=>explodeGrenade(origin),900);}
+    }
+
+        function shoot(){
+        if(currentWeapon==='Grenade'){throwGrenade();return;}
         if (currentWeapon === 'Bandage') {
             if (selectedSlot >= 0) {
                 useBandage(selectedSlot);
@@ -9211,7 +9190,7 @@
 
             for (const [pid, p] of Net.players.entries()) {
                 p.rig.group.traverse(child => {
-                    if (child.isMesh) {
+                    if (child.isMesh && child.name !== 'hitbox') {
                         meshToId.set(child, pid);
                         hitBoxes.push(child);
                     }
@@ -9263,8 +9242,7 @@
 
 
 
-                    const damage =
-                        getWeaponDamage(currentWeapon, intersections[0].distance);
+                    let damage=getWeaponDamage(currentWeapon,intersections[0].distance);if(isHeadHit(intersections[0].object))damage*=2;
 
 
 
@@ -9388,8 +9366,7 @@
 
 
                     if (!blockedByBuilding) {
-                        const damage =
-                            getWeaponDamage(currentWeapon, hitDistance);
+                        let damage=getWeaponDamage(currentWeapon,hitDistance);if(isHeadHit(botIntersections[0].object))damage*=2;
 
 
 
@@ -9457,6 +9434,11 @@
             nextShotTime =
                 performance.now() +
                 650;
+
+        } else if(currentWeapon==='SMG') {
+            nextShotTime=performance.now()+75;
+        } else if(currentWeapon==='Sniper') {
+            nextShotTime=performance.now()+900;
         }
     }
 
@@ -10542,9 +10524,7 @@
                     ? viewmodelPistol
                     : currentWeapon === 'AR'
                     ? viewmodelAR
-                    : currentWeapon === 'Shotgun'
-                    ? viewmodelShotgun
-                    : null;
+                    : currentWeapon==='Shotgun'?viewmodelShotgun:currentWeapon==='SMG'?viewmodelSMG:currentWeapon==='Sniper'?viewmodelSniper:currentWeapon==='Grenade'?viewmodelGrenade:null;
 
 
 
@@ -10886,8 +10866,7 @@
 
 
 
-        Net.updateRemotePlayers(delta);
-        Net.sendState();
+        Net.updateRemotePlayers(delta);Net.sendState();updateLeaderboard();
 
 
 
